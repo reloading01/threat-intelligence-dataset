@@ -1,36 +1,72 @@
+---
+license: cc-by-nc-sa-4.0
+task_categories:
+  - text-generation
+  - question-answering
+language:
+  - en
+tags:
+  - cybersecurity
+  - threat-intelligence
+  - CTI
+  - malware-analysis
+  - incident-response
+  - MITRE-ATT&CK
+  - MITRE-ATLAS
+  - instruction-tuning
+  - llm-fine-tuning
+  - detection-engineering
+  - threat-hunting
+  - vulnerability
+  - CVE
+  - security-operations
+size_categories:
+  - 10K<n<100K
+configs:
+  - config_name: default
+    data_files:
+      - split: train
+        path: data/train.jsonl
+      - split: validation
+        path: data/eval.jsonl
+  - config_name: blended
+    data_files:
+      - split: train
+        path: data/train_blended.jsonl
+  - config_name: multi_turn
+    data_files:
+      - split: train
+        path: data/train_multiturn.jsonl
+---
+
 # Cyber Threat Intelligence Dataset for LLM Fine-Tuning
 
-[![Hugging Face Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-Hugging%20Face-yellow)](https://huggingface.co/datasets/reloading0101/threat-intelligence-dataset)
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-blue.svg)](https://creativecommons.org/licenses/by/4.0/)
+Instruction-tuning data for cyber threat intelligence tasks: explaining the exploitation risk of a CVE, profiling a threat actor from its ATT&CK techniques, turning a Sigma rule into alert-triage steps, mapping a campaign to the kill chain, writing detection logic for a technique, and similar work.
 
-An instruction-tuning dataset for teaching language models to do cyber threat intelligence work: reading a CVE and explaining what the risk actually is, profiling a threat actor from its ATT&CK techniques, turning a Sigma rule into alert-triage guidance, mapping a campaign's kill chain, writing detection logic for a technique, and so on.
+The splits are in `data/`.
 
-The data files live on the [Hugging Face dataset page](https://huggingface.co/datasets/reloading0101/threat-intelligence-dataset); this repository mirrors them under `data/` and documents how the set was built.
+## Grounding
 
-## Why another CTI dataset
+Records are generated from public sources (MITRE ATT&CK, CISA KEV, CWE, OSV, abuse.ch, ransomware.live, Sigma and others), not from free-form model output. The technique IDs, CVEs, CWEs and indicators in each record are checked against the source, and records that fail the check are dropped.
 
-Most "CTI datasets" floating around are a handful of templates with random indicators dropped into the blanks. The IP addresses are made up, the hashes are noise, and the MITRE technique IDs frequently don't match the names next to them. A model trained on that learns to sound like a threat report while being wrong about the facts.
+## Contents
 
-This one is built the other way around. Every record is generated from real sources — MITRE ATT&CK, CISA KEV, CWE, OSV, abuse.ch, ransomware.live, Sigma and others — and every factual claim is checked back against its source before the record is kept. If a technique ID, CVE, CWE, or indicator can't be verified, the record is thrown out rather than shipped.
-
-## What's inside
-
-- 9,970 single-turn examples plus 1,500 multi-turn conversations
-- 37 categories, none of them below 150 examples
-- 97.6% of the instructions are distinct — the phrasing is varied on purpose so the model doesn't latch onto one way of being asked
-- Every MITRE/CVE/CWE/IOC reference verified against its source
-- Near-duplicates stripped out with embeddings
+- 11,962 single-turn examples and 1,302 multi-turn conversations
+- 42 categories, each with at least 155 examples
+- 96.1% of instructions are distinct
+- Train and eval share no entity: all tasks about the same CVE, group, technique, indicator or advisory are on the same side of the split
+- One record per entity and task type, near-duplicates removed
 
 ## Files
 
-| File | Records | What it is |
-|------|--------:|------------|
-| `data/train.jsonl` | 9,172 | CTI training split, single-turn (`instruction` / `input` / `output`) |
-| `data/eval.jsonl` | 798 | Held-out evaluation, stratified by category |
-| `data/train_blended.jsonl` | 12,229 | The train split with 25% general instructions mixed in (keeps the model from forgetting how to talk about anything outside security) |
-| `data/train_multiturn.jsonl` | 1,500 | Grounded two-turn conversations in `messages` format, for follow-up questions |
+| File | Records | Description |
+|------|--------:|-------------|
+| `data/train.jsonl` | 11,037 | Single-turn training split (`instruction` / `input` / `output`) |
+| `data/eval.jsonl` | 925 | Evaluation split, stratified by category and separated from train by entity |
+| `data/train_blended.jsonl` | 14,716 | The train split plus 25% general instructions, to limit forgetting outside security |
+| `data/train_multiturn.jsonl` | 1,302 | Two-turn conversations in `messages` format. Both assistant turns are grounded; the follow-up covers a second angle on the same entity, for example a CVE analysis followed by a patching-priority question |
 
-Loading it from Hugging Face:
+Loading from Hugging Face:
 
 ```python
 from datasets import load_dataset
@@ -42,7 +78,7 @@ chat     = load_dataset("reloading0101/threat-intelligence-dataset", "multi_turn
 
 ## Format
 
-Single-turn records are plain instruction / input / output:
+Single-turn records use instruction / input / output:
 
 ```json
 {
@@ -58,51 +94,58 @@ Single-turn records are plain instruction / input / output:
 }
 ```
 
-Multi-turn records use the standard `messages` list. Both assistant turns are grounded — the follow-up answers a second angle on the same real entity (analyze a CVE, then "should we prioritize patching it?").
+Multi-turn records use the standard `messages` list.
 
-## Where the data comes from
+## Sources
 
-MITRE ATT&CK v19.1 (Enterprise, Mobile, ICS), MITRE ATLAS, MITRE CWE, CISA KEV, FIRST.org EPSS, AttackerKB, OSV.dev, SigmaHQ, abuse.ch (Feodo, SSLBL, URLhaus, ThreatFox), MalwareBazaar, Malpedia, ransomware.live, OpenPhish, plus the usual public frameworks (OWASP Top 10 and API Top 10, STRIDE, NIST SP 800-61, the Diamond Model, the Pyramid of Pain). The general-text blend comes from databricks-dolly-15k.
+MITRE ATT&CK v19.1 (Enterprise, Mobile, ICS), MITRE ATLAS, MITRE CWE, MITRE CAPEC, MITRE D3FEND, MITRE Engage, CISA KEV, CISA CSAF ICS advisories (2026), the VERIS Community Database, FIRST.org EPSS, AttackerKB, OSV.dev, SigmaHQ, abuse.ch (Feodo, SSLBL, URLhaus, ThreatFox), MalwareBazaar, Malpedia, ransomware.live, OpenPhish, OWASP Top 10 and API Top 10, STRIDE, NIST SP 800-61, the Diamond Model and the Pyramid of Pain. The general-instruction data in the blended file comes from databricks-dolly-15k.
 
-## How it was built
+## Construction
 
-1. The sources are parsed into a clean knowledge base — techniques linked to their tactics and mitigations, groups to their malware, CVEs to their EPSS scores, and so on.
-2. Records are generated by pulling real entities out of that knowledge base. The generator never invents an ID, a name, or a relationship; it only arranges facts that already exist.
-3. A local model rephrases each instruction so identical tasks don't share identical wording.
-4. A local model rewrites each answer into readable analyst prose, behind a gate that compares the hard facts before and after and reverts anything the model drifted on.
-5. Embeddings remove near-duplicates, and each category is balanced.
-6. A final validation pass re-checks every ID against the knowledge base and drops anything that doesn't hold up.
+1. The sources are parsed into a knowledge base that links techniques to tactics and mitigations, groups to malware, CVEs to EPSS scores, and so on.
+2. Records are generated from entities in that knowledge base. The generator only arranges facts that are already in it.
+3. A language model rephrases each instruction.
+4. A language model rewrites each answer as analyst prose. A check compares IDs, numbers and names before and after, and the original text is kept when they differ.
+5. Near-duplicates are removed and categories are capped.
+6. A final pass re-checks every ID against the knowledge base and drops records that fail.
 
 ## Categories
 
-37 in total, each with 150–300 examples:
+42 categories with 155 to 443 examples each:
 
-`ai-ml-threats`, `api-security`, `attribution-analysis`, `botnet-infrastructure`, `campaign-analysis`, `cloud-saas-security`, `container-security`, `cryptojacking-mining`, `cyber-espionage-apt`, `dark-web-cybercrime`, `data-exfiltration`, `deception-technology`, `digital-risk-management`, `email-threats`, `geopolitical-threats`, `ics-ot-security`, `incident-response-forensics`, `insider-threats`, `malicious-campaigns`, `malware`, `mobile-iot-threats`, `network-based-threats`, `ransomware-operations`, `red-team-operations`, `security-monitoring-detection`, `social-engineering-fraud`, `supply-chain-attacks`, `threat-actors`, `threat-hunting`, `threat-intelligence`, `threat-intelligence-feeds`, `threat-intelligence-operations`, `threat-modeling`, `ttps-mitre-attack`, `vulnerabilities-cves`, `web-application-security`, `zero-day-exploits`
+`adversary-engagement`, `ai-ml-threats`, `api-security`, `attack-patterns`, `attribution-analysis`, `botnet-infrastructure`, `campaign-analysis`, `cloud-saas-security`, `container-security`, `cryptojacking-mining`, `cyber-espionage-apt`, `dark-web-cybercrime`, `data-exfiltration`, `deception-technology`, `defensive-countermeasures`, `digital-risk-management`, `email-threats`, `geopolitical-threats`, `ics-advisories`, `ics-ot-security`, `incident-case-analysis`, `incident-response-forensics`, `insider-threats`, `malicious-campaigns`, `malware`, `mobile-iot-threats`, `network-based-threats`, `ransomware-operations`, `red-team-operations`, `security-monitoring-detection`, `social-engineering-fraud`, `supply-chain-attacks`, `threat-actors`, `threat-hunting`, `threat-intelligence`, `threat-intelligence-feeds`, `threat-intelligence-operations`, `threat-modeling`, `ttps-mitre-attack`, `vulnerabilities-cves`, `web-application-security`, `zero-day-exploits`
 
-## Using it for fine-tuning
+## Fine-tuning
 
-It's meant for domain-adapting an already instruction-tuned model (Llama 3.x Instruct, Qwen2.5 Instruct, etc.) with LoRA or QLoRA. Train on `train_blended.jsonl` rather than the pure split — the 25% general mix keeps the model from over-specializing and losing its conversational ability. Keep `eval.jsonl` pure so it actually measures CTI skill, and break the score down by category to see where the model is weak.
+Intended for domain adaptation of an instruction-tuned model (Llama 3.x Instruct, Qwen2.5 Instruct and similar) with LoRA or QLoRA. Train on `train_blended.jsonl`; the general data limits loss of conversational ability. Evaluate on `eval.jsonl` and report scores per category.
 
-A reasonable starting point: LoRA rank 16–32, learning rate 1e-4 to 2e-4 on a cosine schedule, 2–3 epochs while watching eval loss, sequence length 2048, and masking the prompt so you only train on the answer.
+Starting values: LoRA rank 16 to 32, learning rate 1e-4 to 2e-4 with a cosine schedule, 2 to 3 epochs, sequence length 2048, loss on the answer only.
 
-## What it won't do
+## Limitations
 
-- **It leans on ATT&CK.** Around 61% of records reference it. ATT&CK is the common language of threat intelligence, so that's not an accident, but a model trained here will reach for ATT&CK framing.
-- **A few categories are small.** Cryptojacking, email and social-engineering sit around 150–175 because that's how much real source material exists for them. Better 160 real examples than 300 padded ones.
-- **It's mostly single-turn.** Instruct base models already handle multi-turn; the `multi_turn` config tops that up but it's the smaller part of the set.
-- The answers follow a report structure on purpose. That's right for analysis tasks, less so for open-ended chat.
+- About 62% of records reference ATT&CK, so a model trained on this data will frame answers in ATT&CK terms.
+- Cryptojacking, email and social-engineering have 155 to 165 examples each, limited by the source material available.
+- The set is mostly single-turn. The `multi_turn` config adds a smaller set of two-turn conversations.
+- About 330 records are scenario-style: an analyst describes a situation and the answer reasons over real facts, including cases where the right answer is that the evidence is not enough to attribute. The rest are one task per entity.
+- Answers follow a report layout, which suits analysis tasks and less so open-ended chat.
 
 ## Ethics and scope
 
-Built for defensive security, education, and research. No working exploits or weaponized code, no PII, no private data. Indicators are either reserved/synthetic ranges (RFC 5737 / 2606) or publicly reported indicators used for detection.
+Intended for defensive security, education and research. The set contains no working exploits and no private data. The `incident-case-analysis` records quote public breach summaries from the VERIS Community Database, which can name the affected organization. Indicators are either reserved ranges (RFC 5737 / 2606) or publicly reported indicators used for detection.
 
 ## License
 
-Released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The underlying sources keep their own terms — ATT&CK's Terms of Use, CISA's public-domain release, Dolly's CC BY-SA 3.0, and so on — so credit those where it applies.
+The dataset is released under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): attribution, non-commercial use, share-alike. Source terms:
 
-## Built with
+- **Malpedia** (CC BY-NC-SA 3.0): non-commercial, credits must be kept. Used in `malware` and `cryptojacking-mining`.
+- **ransomware.live**: free for non-commercial use only, must be credited. Source: Ransomware.live. Used in `ransomware-operations` and `dark-web-cybercrime`. Records are derived summaries, not a copy of the feed.
+- **VERIS Community Database** (CC BY-SA 4.0) and **OWASP Top 10** (CC BY-SA 4.0): share-alike.
+- **databricks-dolly-15k** (CC BY-SA 3.0): only in `train_blended.jsonl`.
+- **SigmaHQ** rules (Detection Rule License 1.1): credit the rule authors.
+- **MITRE ATT&CK, ATLAS, CWE, CAPEC, D3FEND**: MITRE's terms of use. **MITRE Engage**: Apache-2.0. **CISA** KEV and ICS advisories: published by CISA. **abuse.ch** feeds: CC0.
+- **OpenPhish**: its terms prohibit commercial use and redistribution of the feed. 96 records in `email-threats` and `social-engineering-fraud` have `OpenPhish` in `metadata.grounding`; filter on that field if this matters for your use.
 
-The paraphrasing and prose passes were run locally with the open-weight `gpt-oss-20b` model, and deduplication used a local `nomic-embed-text` embedding model. No paid APIs were involved in generation.
+Check the individual terms against your intended use before redistributing.
 
 ## Citation
 
@@ -114,5 +157,3 @@ The paraphrasing and prose passes were run locally with the open-weight `gpt-oss
   url    = {https://huggingface.co/datasets/reloading0101/threat-intelligence-dataset}
 }
 ```
-
-<sub>Topics: cyber threat intelligence, CTI dataset, LLM fine-tuning, instruction tuning, MITRE ATT&CK, CVE, threat hunting, detection engineering, incident response, malware analysis, security LLM, infosec dataset.</sub>
