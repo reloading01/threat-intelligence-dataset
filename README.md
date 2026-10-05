@@ -51,9 +51,9 @@ Records are generated from public sources (MITRE ATT&CK, CISA KEV, CWE, OSV, abu
 
 ## Contents
 
-- 11,822 single-turn examples and 1,911 multi-turn conversations
+- 11,918 single-turn examples and 1,860 multi-turn conversations
 - 42 categories, each with at least 155 examples
-- 96.3% of instructions are distinct
+- 95.8% of instructions are distinct
 - Train and eval share no entity: all tasks about the same CVE, group, technique, indicator or advisory are on the same side of the split
 - One record per entity and task type, near-duplicates removed
 
@@ -61,10 +61,10 @@ Records are generated from public sources (MITRE ATT&CK, CISA KEV, CWE, OSV, abu
 
 | File | Records | Description |
 |------|--------:|-------------|
-| `data/train.jsonl` | 10,915 | Single-turn training split (`instruction` / `input` / `output`) |
-| `data/eval.jsonl` | 907 | Evaluation split, stratified by category and separated from train by entity |
-| `data/train_blended.jsonl` | 14,553 | The train split plus 25% general instructions, to limit forgetting outside security |
-| `data/train_multiturn.jsonl` | 1,911 | Two- and three-turn conversations in `messages` format. Every assistant turn is grounded; each follow-up covers another angle on the same entity, for example a CVE analysis followed by a patching-priority question and an exposure triage |
+| `data/train.jsonl` | 11,042 | Single-turn training split (`instruction` / `input` / `output`) |
+| `data/eval.jsonl` | 876 | Evaluation split, stratified by category and separated from train by entity |
+| `data/train_blended.jsonl` | 14,723 | The train split plus 25% general instructions, to limit forgetting outside security |
+| `data/train_multiturn.jsonl` | 1,860 | Two- and three-turn conversations in `messages` format. Every assistant turn is grounded; each follow-up covers another angle on the same entity, for example a CVE analysis followed by a patching-priority question and an exposure triage |
 
 Loading from Hugging Face:
 
@@ -98,7 +98,7 @@ Multi-turn records use the standard `messages` list.
 
 ## Sources
 
-MITRE ATT&CK v19.1 (Enterprise, Mobile, ICS), MITRE ATLAS, MITRE CWE, MITRE CAPEC, MITRE D3FEND, MITRE Engage, CISA KEV, CISA CSAF ICS advisories (2026), the VERIS Community Database, FIRST.org EPSS, AttackerKB, OSV.dev, SigmaHQ, abuse.ch (Feodo, SSLBL, URLhaus, ThreatFox), MalwareBazaar, Malpedia, ransomware.live, OpenPhish, OWASP Top 10 and API Top 10, STRIDE, NIST SP 800-61, the Diamond Model and the Pyramid of Pain. The general-instruction data in the blended file comes from databricks-dolly-15k.
+MITRE ATT&CK v19.1 (Enterprise, Mobile, ICS), MITRE ATLAS, MITRE CWE, MITRE CAPEC, MITRE D3FEND, MITRE Engage, CISA KEV, CISA CSAF ICS advisories (2026), the VERIS Community Database, FIRST.org EPSS, AttackerKB, OSV.dev, SigmaHQ, abuse.ch (Feodo, SSLBL, URLhaus, ThreatFox), MalwareBazaar, Malpedia, ransomware.live, OpenPhish, OWASP Top 10, API Top 10 and Top 10 for Agentic Applications 2026, STRIDE, NIST SP 800-61, the Diamond Model and the Pyramid of Pain. The general-instruction data in the blended file comes from databricks-dolly-15k.
 
 ## Construction
 
@@ -139,7 +139,7 @@ The dataset is released under [CC BY-NC-SA 4.0](https://creativecommons.org/lice
 
 - **Malpedia** (CC BY-NC-SA 3.0): non-commercial, credits must be kept. Used in `malware` and `cryptojacking-mining`.
 - **ransomware.live**: free for non-commercial use only, must be credited. Source: Ransomware.live. Used in `ransomware-operations` and `dark-web-cybercrime`. Records are derived summaries, not a copy of the feed.
-- **VERIS Community Database** (CC BY-SA 4.0) and **OWASP Top 10** (CC BY-SA 4.0): share-alike.
+- **VERIS Community Database**, **OWASP Top 10** and **OWASP Top 10 for Agentic Applications 2026** (OWASP Gen AI Security Project), all CC BY-SA 4.0: share-alike. Records with the agentic Top 10 as their grounding quote or condense that document.
 - **databricks-dolly-15k** (CC BY-SA 3.0): only in `train_blended.jsonl`.
 - **SigmaHQ** rules (Detection Rule License 1.1): credit the rule authors.
 - **MITRE ATT&CK, ATLAS, CWE, CAPEC, D3FEND**: MITRE's terms of use. **MITRE Engage**: Apache-2.0. **CISA** KEV and ICS advisories: published by CISA. **abuse.ch** feeds: CC0.
