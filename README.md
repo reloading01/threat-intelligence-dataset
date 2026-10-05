@@ -51,9 +51,9 @@ Records are generated from public sources (MITRE ATT&CK, CISA KEV, CWE, OSV, abu
 
 ## Contents
 
-- 11,962 single-turn examples and 1,302 multi-turn conversations
+- 11,822 single-turn examples and 1,911 multi-turn conversations
 - 42 categories, each with at least 155 examples
-- 96.1% of instructions are distinct
+- 96.3% of instructions are distinct
 - Train and eval share no entity: all tasks about the same CVE, group, technique, indicator or advisory are on the same side of the split
 - One record per entity and task type, near-duplicates removed
 
@@ -61,10 +61,10 @@ Records are generated from public sources (MITRE ATT&CK, CISA KEV, CWE, OSV, abu
 
 | File | Records | Description |
 |------|--------:|-------------|
-| `data/train.jsonl` | 11,037 | Single-turn training split (`instruction` / `input` / `output`) |
-| `data/eval.jsonl` | 925 | Evaluation split, stratified by category and separated from train by entity |
-| `data/train_blended.jsonl` | 14,716 | The train split plus 25% general instructions, to limit forgetting outside security |
-| `data/train_multiturn.jsonl` | 1,302 | Two-turn conversations in `messages` format. Both assistant turns are grounded; the follow-up covers a second angle on the same entity, for example a CVE analysis followed by a patching-priority question |
+| `data/train.jsonl` | 10,915 | Single-turn training split (`instruction` / `input` / `output`) |
+| `data/eval.jsonl` | 907 | Evaluation split, stratified by category and separated from train by entity |
+| `data/train_blended.jsonl` | 14,553 | The train split plus 25% general instructions, to limit forgetting outside security |
+| `data/train_multiturn.jsonl` | 1,911 | Two- and three-turn conversations in `messages` format. Every assistant turn is grounded; each follow-up covers another angle on the same entity, for example a CVE analysis followed by a patching-priority question and an exposure triage |
 
 Loading from Hugging Face:
 
@@ -125,8 +125,8 @@ Starting values: LoRA rank 16 to 32, learning rate 1e-4 to 2e-4 with a cosine sc
 
 - About 62% of records reference ATT&CK, so a model trained on this data will frame answers in ATT&CK terms.
 - Cryptojacking, email and social-engineering have 155 to 165 examples each, limited by the source material available.
-- The set is mostly single-turn. The `multi_turn` config adds a smaller set of two-turn conversations.
-- About 330 records are scenario-style: an analyst describes a situation and the answer reasons over real facts, including cases where the right answer is that the evidence is not enough to attribute. The rest are one task per entity.
+- The set is mostly single-turn. The `multi_turn` config adds a smaller set of two- and three-turn conversations.
+- About 250 records are scenario-style: an analyst describes a situation and the answer reasons over real facts, including cases where the right answer is that the evidence is not enough to attribute. The rest are one task per entity.
 - Answers follow a report layout, which suits analysis tasks and less so open-ended chat.
 
 ## Ethics and scope
